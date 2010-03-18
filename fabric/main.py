@@ -14,13 +14,13 @@ from optparse import OptionParser
 import os
 import sys
 
-from fabric import api # For checking callables against the API 
+from fabric import api # For checking callables against the API
 from fabric.contrib import console, files, project # Ditto
 from fabric.network import denormalize, interpret_host_string, disconnect_all
 from fabric import state # For easily-mockable access to roles, env and etc
 from fabric.state import commands, connections, env_options
 from fabric.utils import abort, indent
-
+from fabric.decorators import is_parallel, is_sequential
 
 # One-time calculation of "all internal callables" to avoid doing this on every
 # check of a given fabfile callable (in is_task()).
@@ -439,15 +439,32 @@ def main():
             commands[r] = lambda: api.run(remainder_command)
             commands_to_run.append((r, [], {}, [], []))
 
+
+        if state.env.run_in_parallel or fabric.decorators._parallel:
+            #We want to try to import the multiprocessing module by default.
+            #The state is checked to see if it was specifically requested, and
+            #in that case an error is reported.
+            try:
+                import multiprocessing
+                
+            except ImportError:
+                state.env.run_in_parallel = False
+                print("Unable to run in parallel as requested.\n" +
+                        "You need the multiprocessing module.\n" +
+                        "Continuing.")
+
+
         # At this point all commands must exist, so execute them in order.
         for name, args, kwargs, cli_hosts, cli_roles in commands_to_run:
-            # Get callable by itself
+            # Get callable by itself:
             command = commands[name]
             # Set current command name (used for some error messages)
             state.env.command = name
             # Set host list (also copy to env)
             state.env.all_hosts = hosts = get_hosts(
                 command, cli_hosts, cli_roles)
+
+            jobs = []
             # If hosts found, execute the function on each host in turn
             for host in hosts:
                 # Preserve user
@@ -457,10 +474,30 @@ def main():
                 # Log to stdout
                 if state.output.running:
                     print("[%s] Executing task '%s'" % (host, name))
+
                 # Actually run command
-                commands[name](*args, **kwargs)
+                # run in parallel when set globally or on function with decorator
+                if ((state.env.run_in_parallel and not is_sequential(commands[name])) or
+                        (not state.env.run_in_parallel and is_parallel(commands[name]))):
+                    p = multiprocessing.Process(
+                            target = commands[name],
+                            args = args,
+                            kwargs = kwargs,
+                            )
+                    jobs.append(p)
+                    p.start()
+
+                else:
+                    commands[name](*args,**kwargs)
+            
                 # Put old user back
                 state.env.user = prev_user
+
+            #only runs if was set to run in parallel, and causes fabric to 
+            #wait to end program until all Processes have returned.
+            for p in jobs:
+                p.join()
+
             # If no hosts found, assume local-only and run once
             if not hosts:
                 commands[name](*args, **kwargs)

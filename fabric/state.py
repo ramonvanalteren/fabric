@@ -186,7 +186,15 @@ env_options = [
         action='store_true',
         default=False,
         help="force use of pseudo-terminal in run/sudo"
-    )
+    ),
+
+    # Parallel execution model flag
+    make_option('-P', '--parallel',
+        dest='run_in_parallel',
+        action='store_true',
+        default=False,
+        help="use the multiprocessing module to fork by hosts"
+    ),
     
 ]
 

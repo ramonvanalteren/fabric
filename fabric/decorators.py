@@ -77,4 +77,43 @@ def runs_once(func):
         else:
             decorated.has_run = True
             return func(*args, **kwargs)
+
+    runs_sequential(decorated)
     return decorated
+
+
+
+_sequential = set()
+def runs_sequential(func):
+    """
+    Decorator preventing the parallel option from running this function
+    non-sequentally.
+
+    """
+    _sequential.add(func.__name__)
+
+    if is_parallel(func):
+        _parallel.remove(func.__name__)
+
+    return func
+
+def is_sequential(func):
+    return func.__name__ in _sequential
+
+
+_parallel = set()
+def runs_parallel(func):
+    """
+    Decorator explicitly specifying that a function be run in parallel,
+    since the default mode of operation is to be sequential.
+    """
+    _parallel.add(func.__name__)
+
+    if is_sequential(func):
+        _sequential.remove(func.__name__)
+
+    return func
+
+def is_parallel(func):
+    return func.__name__ in _parallel
+
