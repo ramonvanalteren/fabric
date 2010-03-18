@@ -117,3 +117,5 @@ def runs_parallel(func):
 def is_parallel(func):
     return func.__name__ in _parallel
 
+def needs_multiprocessing():
+    return _parallel != set()

@@ -20,7 +20,7 @@ from fabric.network import denormalize, interpret_host_string, disconnect_all
 from fabric import state # For easily-mockable access to roles, env and etc
 from fabric.state import commands, connections, env_options
 from fabric.utils import abort, indent
-from fabric.decorators import is_parallel, is_sequential
+from fabric.decorators import is_parallel, is_sequential, needs_multiprocessing
 
 # One-time calculation of "all internal callables" to avoid doing this on every
 # check of a given fabfile callable (in is_task()).
@@ -440,7 +440,7 @@ def main():
             commands_to_run.append((r, [], {}, [], []))
 
 
-        if state.env.run_in_parallel or fabric.decorators._parallel:
+        if state.env.run_in_parallel or needs_multiprocessing():
             #We want to try to import the multiprocessing module by default.
             #The state is checked to see if it was specifically requested, and
             #in that case an error is reported.
@@ -479,6 +479,7 @@ def main():
                 # run in parallel when set globally or on function with decorator
                 if ((state.env.run_in_parallel and not is_sequential(commands[name])) or
                         (not state.env.run_in_parallel and is_parallel(commands[name]))):
+
                     p = multiprocessing.Process(
                             target = commands[name],
                             args = args,

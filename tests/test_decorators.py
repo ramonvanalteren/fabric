@@ -72,3 +72,5 @@ def test_hosts():
     assert_equal(use_hosts.hosts, ['test'])
 
 
+def test_needs_multiprocessing():
+    assert_true(needs_multiprocessing())
