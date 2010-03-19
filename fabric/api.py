@@ -7,7 +7,8 @@ setup.py -- without triggering loads of most of the code. Which doesn't work so
 well when you're using setup.py to install e.g. paramiko!
 """
 from fabric.context_managers import cd, hide, settings, show, path, prefix
-from fabric.decorators import hosts, roles, runs_once, runs_sequential, runs_parallel, is_sequential
+from fabric.decorators import (hosts, roles, runs_once, runs_sequential, 
+    runs_parallel, is_sequential, is_parallel)
 from fabric.operations import (require, prompt, put, get, run, sudo, local,
     reboot)
 from fabric.state import env, output
