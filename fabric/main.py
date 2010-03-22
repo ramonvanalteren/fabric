@@ -440,12 +440,14 @@ def main():
             commands_to_run.append((r, [], {}, [], []))
 
 
+        state.env.has_multiprocessing = False
         if state.env.run_in_parallel or needs_multiprocessing():
             #We want to try to import the multiprocessing module by default.
             #The state is checked to see if it was specifically requested, and
             #in that case an error is reported.
             try:
                 import multiprocessing
+                state.env.has_multiprocessing = True
                 
             except ImportError:
                 state.env.run_in_parallel = False
@@ -477,8 +479,9 @@ def main():
 
                 # Actually run command
                 # run in parallel when set globally or on function with decorator
-                if ((state.env.run_in_parallel and not is_sequential(commands[name])) or
-                        (not state.env.run_in_parallel and is_parallel(commands[name]))):
+                if (state.env.has_multiprocessing and 
+                        ((state.env.run_in_parallel and not is_sequential(commands[name])) or
+                            (not state.env.run_in_parallel and is_parallel(commands[name])))):
 
                     p = multiprocessing.Process(
                             target = commands[name],
