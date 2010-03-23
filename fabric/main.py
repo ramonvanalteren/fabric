@@ -348,6 +348,17 @@ def update_output_levels(show, hide):
             state.output[key] = False
 
 
+def running_parallel(command):
+    """
+    After making sure a multiprocessing module has been loaded. The two cases 
+    for a command to run parallel are:
+        if it's not explicitly sequential and whole program is set for parallel
+        if it is explicitly parallel
+    """
+    return (state.env.has_multiprocessing and 
+            ((state.env.run_in_parallel and not is_sequential(command)) or
+                (is_parallel(command))))
+
 def main():
     """
     Main command-line execution loop.
@@ -479,10 +490,7 @@ def main():
 
                 # Actually run command
                 # run in parallel when set globally or on function with decorator
-                if (state.env.has_multiprocessing and 
-                        ((state.env.run_in_parallel and not is_sequential(commands[name])) or
-                            (not state.env.run_in_parallel and is_parallel(commands[name])))):
-
+                if running_parallel(commands[name]):
                     p = multiprocessing.Process(
                             target = commands[name],
                             args = args,
