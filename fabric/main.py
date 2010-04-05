@@ -350,6 +350,9 @@ def update_output_levels(show, hide):
 
 def running_parallel(command):
     """
+    Returns if the command currently asking to be run is needing to be run in
+    parallel or not.
+
     After making sure a multiprocessing module has been loaded. The two cases 
     for a command to run parallel are:
         if it's not explicitly sequential and whole program is set for parallel
