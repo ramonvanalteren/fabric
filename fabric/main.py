@@ -467,7 +467,6 @@ def main():
                         "You need the multiprocessing module.\n" +
                         "Continuing.")
 
-
         # At this point all commands must exist, so execute them in order.
         for name, args, kwargs, cli_hosts, cli_roles in commands_to_run:
             # Get callable by itself:
@@ -477,6 +476,10 @@ def main():
             # Set host list (also copy to env)
             state.env.all_hosts = hosts = get_hosts(
                 command, cli_hosts, cli_roles)
+
+            print "Number for pool: %d" % state.env.pool_size
+            if not state.env.pool_size:
+                print "Since zero make number of hosts: %d" % len(hosts)
 
             jobs = []
             # If hosts found, execute the function on each host in turn
