@@ -197,6 +197,7 @@ env_options = [
                     not given, will fork once for each host, and not pool."
     ),
 
+    # Limits the number of forks the parallel option uses
     make_option('-z', '--pool-size',
             dest = 'pool_size',
             type = 'int',

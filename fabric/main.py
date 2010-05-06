@@ -480,10 +480,20 @@ def main():
             print "Number for pool: %d" % state.env.pool_size
             if not state.env.pool_size:
                 print "Since zero make number of hosts: %d" % len(hosts)
+                pool_size = len(hosts)
+
+            else:
+                pool_size = state.env.pool_size
+
+            host_pool = multiprocessing.Pool(pool_size)
 
             jobs = []
             # If hosts found, execute the function on each host in turn
-            for host in hosts:
+
+
+            if running_parallel(command):
+                #parallel
+
                 # Preserve user
                 prev_user = state.env.user
                 # Split host string and apply to env dict
@@ -491,19 +501,26 @@ def main():
                 # Log to stdout
                 if state.output.running:
                     print("[%s] Executing task '%s'" % (host, name))
-
+        
                 # Actually run command
                 # run in parallel when set globally or on function with decorator
-                if running_parallel(commands[name]):
-                    p = multiprocessing.Process(
-                            target = commands[name],
-                            args = args,
-                            kwargs = kwargs,
-                            )
-                    jobs.append(p)
-                    p.start()
+                print pool.apply_async(
+                        commands[name],
+                        [(args, kwargs)] * pool_size,
+                    )
+ 
+            else:
+                #sequential
 
-                else:
+                for host in hosts:
+                    # Preserve user
+                    prev_user = state.env.user
+                    # Split host string and apply to env dict
+                    username, hostname, port = interpret_host_string(host)
+                    # Log to stdout
+                    if state.output.running:
+                        print("[%s] Executing task '%s'" % (host, name))
+
                     commands[name](*args,**kwargs)
             
                 # Put old user back
