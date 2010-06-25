@@ -21,6 +21,7 @@ from fabric import state # For easily-mockable access to roles, env and etc
 from fabric.state import commands, connections, env_options
 from fabric.utils import abort, indent
 from fabric.decorators import is_parallel, is_sequential, needs_multiprocessing
+from job_queue import Job_Queue
 
 # One-time calculation of "all internal callables" to avoid doing this on every
 # check of a given fabfile callable (in is_task()).
@@ -494,20 +495,19 @@ def main():
             state.env.all_hosts = hosts = get_hosts(
                 command, cli_hosts, cli_roles)
 
-            #NOT IMPLEMENTED
-            #print "Number for pool: %d" % state.env.pool_size
-            #if not state.env.pool_size:
-            #    print "Since zero make number of hosts: %d" % len(hosts)
-            #    pool_size = len(hosts)
-            #
-            #else:
-            #    pool_size = state.env.pool_size
-            #
-            #host_pool = multiprocessing.Pool(pool_size)
+            print "Number for pool: %d" % state.env.pool_size
+            if not state.env.pool_size:
+                print "Since zero make number of hosts: %d" % len(hosts)
+                pool_size = len(hosts)
+            
+            else:
+                pool_size = state.env.pool_size
+            
 
-            jobs = []
+            jobs = Job_Queue(pool_size)
+            jobs._debug = True
+
             # If hosts found, execute the function on each host in turn
-
             for host in hosts:
                 # Preserve user
                 prev_user = state.env.user
@@ -527,8 +527,9 @@ def main():
                             args = args,
                             kwargs = kwargs,
                             )
+                    p.name = state.env.host_string
+
                     jobs.append(p)
-                    p.start()
 
                 else:
                     #sequential                
@@ -539,12 +540,14 @@ def main():
 
             #only runs if was set to run in parallel, and causes fabric to 
             #wait to end program until all Processes have returned.
-            for p in jobs:
-                p.join()
+            if jobs:
+                jobs.close()
+                jobs.start()
 
             # If no hosts found, assume local-only and run once
             if not hosts:
                 commands[name](*args, **kwargs)
+
         # If we got here, no errors occurred, so print a final note.
         if state.output.status:
             print("\nDone.")
