@@ -1,4 +1,7 @@
-This branch adds in a few more features to basic Fabric. It will create one process per host given for parallel execution on commands, unless one sets the pool size with the connad flag. I have leveraged the multiprocessing module to do this. 
+This branch adds in a few more features to basic Fabric. It will create one 
+process per host given for parallel execution on commands, unless one sets the
+pool size with the connad flag. I have leveraged the multiprocessing module to 
+do this. 
 
 There are new command flags for fab:
   -P, --parallel        use the multiprocessing module to fork by hosts
@@ -9,6 +12,15 @@ I have also added two decorators:
 @runs_parallel
 @runs_sequential
 
-These will allow a fab file command to be set to be run either in parallel or sequentially regardless of the fab command flag. Without these commands switch when the flag is set.
+These will allow a fab file command to be set to be run either in parallel or
+sequentially regardless of the fab command flag. Without these commands switch 
+when the flag is set.
 
-If you are interested in the guts, the implementation is in the main.py file, and uses the Job_Queue class in the job_queue.py file. Note that this is only implemented in the fab command, as there is no way to determine how one will execute functions if they are using Fabric as a helper library.
+If you are interested in the guts, the implementation is in the main.py file,
+and uses the Job_Queue class in the job_queue.py file. Note that this is only
+implemented in the fab command, as there is no way to determine how one will 
+execute functions if they are using Fabric as a helper library.
+
+One other thing to note being that if you set a pool size larger than the
+number of hosts, it'll set the pool size to the number of hosts. Otherwise an
+error about poping from an empty list will crop up.
