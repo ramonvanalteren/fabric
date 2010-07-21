@@ -495,11 +495,16 @@ def main():
             state.env.all_hosts = hosts = get_hosts(
                 command, cli_hosts, cli_roles)
 
-            print "Number for pool: %d" % state.env.pool_size
+            if state.output.debug:
+                print "Number for pool: %d" % state.env.pool_size
             if not state.env.pool_size:
-                print "Since zero make number of hosts: %d" % len(hosts)
+                if state.output.debug:
+                    print "Since zero make number of hosts: %d" % len(hosts)
                 pool_size = len(hosts)
             
+            elif len(hosts) < state.env.pool_size:
+                pool_size = len(hosts)
+                
             else:
                 pool_size = state.env.pool_size
             
