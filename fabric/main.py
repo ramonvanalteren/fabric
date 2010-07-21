@@ -504,8 +504,9 @@ def main():
                 pool_size = state.env.pool_size
             
 
-            jobs = Job_Queue(pool_size, state.env, state.connections)
-            jobs._debug = True
+            jobs = Job_Queue(pool_size)
+            if state.output.debug:
+                jobs._debug = True
 
             # If hosts found, execute the function on each host in turn
             for host in hosts:

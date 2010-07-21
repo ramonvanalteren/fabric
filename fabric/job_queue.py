@@ -1,19 +1,14 @@
+from fabric.state import env
+from fabric.network import disconnect_all
+from pprint import pprint
 
-from fabric.state import connections
 
 class Job_Queue(object):
 
-    def __init__(self, max_running, state=None, network=None):
+    def __init__(self, max_running):
         self._queued = []
         self._running = []
         self._completed = []
-        if state:
-            global env
-            env = state
-        if network:
-            global connections
-            connections = network
-
         self._num_of_jobs = 0
         self._max = max_running
         self._finished = False
@@ -35,63 +30,58 @@ class Job_Queue(object):
             if self._debug:
                 print("job queue appended %s." % process.name)
             global env
-            global connections
-            env.hoststring = env.host = process.name
-            channel = connections[env.host_string]._transport.open_session()
+            env.host_string = env.host = process.name
             self._queued.append(process)
 
     def start(self):
+
+        def _advance_the_queue():
+            job = self._queued.pop()
+            env.host_string = env.host = job.name
+            job.start()
+            self._running.append(job)
+
         if not self._closed:
             raise Exception("Need to close() before starting.")
 
         if self._debug:
-            print("job queue starting.")
+            print("Job queue starting.")
+            print("Job queue intial running queue fill.")
 
         while len(self._running) < self._max:
-            if self._debug:
-                print("job queue intial running queue fill.")
-
-                job = self._queued.pop()
-                global env
-                env.hoststring = env.host = job.name
-                job.start()
-                #job.join()
-                self._running.append(job)
+            _advance_the_queue()
 
         while not self._finished:
 
             while len(self._running) < self._max and self._queued:
                 if self._debug:
-                    print("job queue running queue filling.")
+                    print("Job queue running queue filling.")
               
-                job = self._queued.pop()
-                job.start()
-                #job.join()
-                self._running.append(job)
-
+                _advance_the_queue()
 
             if not self._all_alive():
                 for id, job in enumerate(self._running):
                     if not job.is_alive():
                         if self._debug:
-                            print("job queue found finished proc: %s." %
+                            print("Job queue found finished proc: %s." %
                                     job.name)
-
+                        
                         done = self._running.pop(id)
                         self._completed.append(done)
 
                         if self._debug:
-                            print("job queue has %d running." % len(self._running))
+                            print("Job queue has %d running." % len(self._running))
 
-            if not (self._queued and self._running): #and 
-                #len(self._completed) == self._num_of_jobs):
+            if not (self._queued or self._running):
                 if self._debug:
-                    print("job queue finished.")
+                    print("Job queue finished.")
 
                 for job in self._completed:
                     job.join()
 
                 self._finished = True
+
+        disconnect_all()
 
 
 def test_Job_Queue():
@@ -113,7 +103,6 @@ def test_Job_Queue():
 
     jobs.close()
     jobs.start()
-
 
 
 if __name__ == '__main__':
