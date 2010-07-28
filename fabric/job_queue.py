@@ -30,6 +30,9 @@ class Job_Queue(object):
         self._closed = False
         self._debug = False
 
+    def __len__(self):
+        return self._num_of_jobs
+
     def _all_alive(self):
         """
         Simply states if all procs are alive or not. Needed to determine when
