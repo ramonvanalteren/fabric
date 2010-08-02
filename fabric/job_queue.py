@@ -38,7 +38,7 @@ class Job_Queue(object):
         Simply states if all procs are alive or not. Needed to determine when
         to stop looping, and pop dead procs off and add live ones.
         """
-        return all([x.is_alive() for x in self._running])
+        return all([proc.is_alive() for proc in self._running])
 
     def close(self):
         """
@@ -48,16 +48,18 @@ class Job_Queue(object):
         if self._debug:
             print("job queue closed.")
 
-        self._num_of_jobs = len(self._queued)
         self._closed = True
 
     def append(self, process):
         """
         Add the Process() to the queue, so that later it can be checked up on.
         That is if the Job_Queue is still open.
+
+        If the queue is closed, this will just silently do nothing.
         """
         if not self._closed:
             self._queued.append(process)
+            self._num_of_jobs += 1
             if self._debug:
                 print("job queue appended %s." % process.name)
 
