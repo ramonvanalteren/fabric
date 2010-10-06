@@ -203,7 +203,25 @@ env_options = [
         action='store_false',
         default=True,
         help="do not use pseudo-terminal in run/sudo"
-    )
+    ),
+
+    # Parallel execution model flag
+    make_option('-P', '--parallel',
+            dest = 'run_in_parallel', 
+            action = 'store_true',
+            default = False,
+            help = ("use the multiprocessing module to fork by hosts, If num "
+                "forks not given, will fork once for each host, and not pool.")
+    ),
+
+    # Limits the number of forks the parallel option uses
+    make_option('-z', '--pool-size',
+            dest = 'pool_size',
+            type = 'int',
+            metavar = 'FORKS',
+            default = 0,
+            help = "Set the number of forks to use in the pool.",
+    ),
     
 ]
 
