@@ -125,17 +125,27 @@ def is_sequential(func):
 
 
 _parallel = set()
-def runs_parallel(func):
+def runs_parallel(with_bubble_of=None):
     """
     Decorator explicitly specifying that a function be run in parallel,
     since the default mode of operation is to be sequential.
     """
-    _parallel.add(func.__name__)
+    def real_decorator(func):
+        _parallel.add(func.__name__)
 
-    if is_sequential(func):
-        _sequential.remove(func.__name__)
+        if is_sequential(func):
+            _sequential.remove(func.__name__)
 
-    return func
+        func._pool_size = with_bubble_of
+
+        return func
+
+    # Trick to allow for both a dec w/ the optional setting without have to
+    # force it to use ()
+    if type(with_bubble_of) == type(real_decorator):
+        return real_decorator(with_bubble_of)
+
+    return real_decorator
 
 def is_parallel(func):
     return func.__name__ in _parallel

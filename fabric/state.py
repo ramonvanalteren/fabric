@@ -144,7 +144,7 @@ env_options = [
         help="comma-separated list of roles to operate on"
     ),
 
-    make_option('-i', 
+    make_option('-i',
         action='append',
         dest='key_filename',
         default=None,
@@ -222,7 +222,7 @@ env_options = [
             default = 0,
             help = "Set the number of forks to use in the pool.",
     ),
-    
+
 ]
 
 

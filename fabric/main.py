@@ -555,7 +555,11 @@ def main():
 
             if state.output.debug:
                 print "Number for pool: %d" % state.env.pool_size
-            if not state.env.pool_size:
+
+            if has_attr(command, '_pool_size') and command._pool_size:
+                pool_size = command._pool_size
+
+            elif not state.env.pool_size:
                 if state.output.debug:
                     print "Since zero make number of hosts: %d" % len(hosts)
                 pool_size = len(hosts)
@@ -596,9 +600,9 @@ def main():
                     jobs.append(p)
 
                 else:
-                    #sequential                
+                    #sequential
                     commands[name](*args,**kwargs)
-            
+
                 # Put old user back
                 state.env.user = prev_user
 

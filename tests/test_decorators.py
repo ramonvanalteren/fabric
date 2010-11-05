@@ -1,7 +1,7 @@
 from nose.tools import eq_
 from fudge import Fake, with_fakes
 
-from fabric import decorators
+from fabric import decorators, state
 from nose.tools import assert_true, assert_false, assert_equal
 
 
@@ -81,14 +81,23 @@ def parallel():
 def parallel2():
     pass
 
+@decorators.runs_parallel(with_bubble_of=20)
+def parallel3():
+    pass
+
 def test_parallel():
     assert_true(decorators.is_parallel(parallel))
     assert_false(decorators.is_sequential(parallel))
-    parallel() 
-    
+    parallel()
+
     assert_true(decorators.is_parallel(parallel2))
     assert_false(decorators.is_sequential(parallel2))
-    parallel2()  
+    parallel2()
+
+    assert_true(decorators.is_parallel(parallel))
+    assert_false(decorators.is_sequential(parallel))
+    assert_equal(parallel3._pool_size, 20)
+    assert_equal(getattr(parallel3, '_pool_size'), 20)
 
 
 @decorators.roles('test')
