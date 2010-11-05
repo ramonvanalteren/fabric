@@ -1,7 +1,7 @@
 from nose.tools import eq_
 from fudge import Fake, with_fakes
 
-from fabric import decorators, state
+from fabric import decorators
 from nose.tools import assert_true, assert_false, assert_equal
 
 

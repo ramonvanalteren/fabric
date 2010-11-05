@@ -556,20 +556,20 @@ def main():
             if state.output.debug:
                 print "Number for pool: %d" % state.env.pool_size
 
-            if has_attr(command, '_pool_size') and command._pool_size:
+            if hasattr(command, '_pool_size') and command._pool_size:
                 pool_size = command._pool_size
 
             elif not state.env.pool_size:
                 if state.output.debug:
                     print "Since zero make number of hosts: %d" % len(hosts)
                 pool_size = len(hosts)
-            
-            elif len(hosts) < state.env.pool_size:
-                pool_size = len(hosts)
-                
+
             else:
                 pool_size = state.env.pool_size
-            
+
+            if len(hosts) < pool_size:
+                pool_size = int(len(hosts)/2) + 1
+
 
             jobs = Job_Queue(pool_size)
             if state.output.debug:
@@ -587,7 +587,7 @@ def main():
 
                 if running_parallel(command):
                     #parallel
-                    
+
                     # Actually run command
                     # run in parallel when set globally or on function with decorator
                     p = multiprocessing.Process(
