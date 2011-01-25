@@ -115,8 +115,8 @@ happens if we run :option:`fab --list <-l>` on this fabfile::
     $ fab --list
     Available commands:
 
-      my_task    List some directories.   
-      urlopen    urlopen(url [, data]) -> open file-like object
+      webservice_read   List some directories.   
+      urlopen           urlopen(url [, data]) -> open file-like object
 
 Our fabfile of only one task is showing two "tasks", which is bad enough, and
 an unsuspecting user might accidentally try to call ``fab urlopen``, which
@@ -443,6 +443,7 @@ immediately. However, if ``env.warn_only`` is set to ``True`` at the time of
 failure -- with, say, the `~fabric.context_managers.settings` context
 manager -- Fabric will emit a warning message but continue executing.
 
+.. _connections:
 
 Connections
 ===========
