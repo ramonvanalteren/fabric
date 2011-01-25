@@ -1,3 +1,10 @@
+"""
+This module provides a Job_queue class, and an example of use. One may drop in
+either multiprocessing Prcoesses or threading Threads, as I have show in the
+test suite.
+
+"""
+
 from fabric.state import env
 from fabric.network import disconnect_all
 from pprint import pprint
@@ -11,16 +18,22 @@ class Job_Queue(object):
     So if the bubble is 5 start with 5 running and move the bubble of running
     procs along the queue looking something like this:
 
-    ---------------------------
-    [-----]--------------------
-    ---[-----]-----------------
-    ---------[-----]-----------
-    ------------------[-----]--
-    --------------------[-----]
-    ---------------------------
+        Start
+        ...........................
+        [~~~~~]....................
+        ___[~~~~~].................
+        _________[~~~~~]...........
+        __________________[~~~~~]..
+        ____________________[~~~~~]
+        ___________________________
+                                End 
+
     """
 
     def __init__(self, max_running):
+        """
+        Setup the class to resonable defaults.
+        """
         self._queued = []
         self._running = []
         self._completed = []
@@ -30,16 +43,23 @@ class Job_Queue(object):
         self._closed = False
         self._debug = False
 
-    def __len__(self):
-        return self._num_of_jobs
-
     def _all_alive(self):
         """
         Simply states if all procs are alive or not. Needed to determine when
         to stop looping, and pop dead procs off and add live ones.
         """
-        return all([proc.is_alive() for proc in self._running])
+        if self._running:
+            return all([x.is_alive() for x in self._running])
 
+        else:
+            return False
+
+    def __len__(self):
+        """
+        Just going to use number of jobs as the Job_Queue length.
+        """
+        return self._num_of_jobs
+    
     def close(self):
         """
         A sanity check, so that the need to care about new jobs being added in
@@ -118,7 +138,7 @@ class Job_Queue(object):
                         if self._debug:
                             print("Job queue found finished proc: %s." %
                                     job.name)
-                        
+
                         done = self._running.pop(id)
                         self._completed.append(done)
 
@@ -136,27 +156,44 @@ class Job_Queue(object):
 
         disconnect_all()
 
+#### Sample 
 
-def test_Job_Queue():
+def try_using(parallel_type):
+    """
+    This will run the queue through it's paces, and show a simple way of using
+    the job queue. 
+    """
 
     def print_number(number):
+        """
+        Simple function to give a simple task to execute.
+        """
         print(number)
 
-    from multiprocessing import Process
+    if parallel_type == "multiprocessing":
+        from multiprocessing import Process as Bucket
 
+    elif parallel_type == "threading":
+        from threading import Thread as Bucket
+
+
+    # Make a job_queue with a bubble of len 5, and have it print verbosely
     jobs = Job_Queue(5)
     jobs._debug = True
 
+    # Add 20 procs onto the stack
     for x in range(20):
-        jobs.append(Process(
+        jobs.append(Bucket(
             target = print_number,
             args = [x],
-            kwargs = [],
+            kwargs = {},
             ))
 
+    # Close up the queue and then start it's execution
     jobs.close()
     jobs.start()
 
 
 if __name__ == '__main__':
-    test_Job_Queue()
+    try_using("multiprocessing")
+    try_using("threading")
