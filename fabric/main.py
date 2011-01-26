@@ -553,6 +553,9 @@ def main():
             state.env.all_hosts = hosts = get_hosts(
                 command, cli_hosts, cli_roles)
 
+            if hasattr(state.env, 'pre_task'):
+                state.env.pre_task()
+
             if state.output.debug:
                 print "Number for pool: %d" % state.env.pool_size
 
@@ -615,6 +618,11 @@ def main():
             # If no hosts found, assume local-only and run once
             if not hosts:
                 commands[name](*args, **kwargs)
+
+            # Run the post commands if present
+            if hasattr(state.env, 'post_task'):
+                state.env.post_task()
+
 
         # If we got here, no errors occurred, so print a final note.
         if state.output.status:

@@ -39,6 +39,9 @@ setup(
     test_suite='nose.collector',
     tests_require=['nose', 'fudge'],
     install_requires=['pycrypto %s' % PYCRYPTO, 'paramiko >=1.7.6'],
+    dependency_links = [
+        'https://github.com/goosemo/paramiko/tarball/master#egg=release-1.7.6.1"
+        ],
     entry_points={
         'console_scripts': [
             'fab = fabric.main:main',
