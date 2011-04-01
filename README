@@ -1,3 +1,7 @@
+Fabric is a Python (2.5 or higher) library and command-line tool for
+streamlining the use of SSH for application deployment or systems
+administration tasks.
+
 This branch adds in a few more features to basic Fabric. It will create one 
 process per host given for parallel execution on commands, unless one sets the
 pool size with the connad flag. I have leveraged the multiprocessing module to 

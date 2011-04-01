@@ -29,8 +29,6 @@ from server import (server, PORT, RESPONSES, PASSWORDS, CLIENT_PRIVKEY, USER,
 
 
 class TestNetwork(FabricTest):
-
-
     def test_host_string_normalization(self):
         username = _get_system_username()
         for description, input, output_ in (
@@ -64,6 +62,14 @@ class TestNetwork(FabricTest):
             normalize('user-with-hyphens@someserver.org')[0],
             'user-with-hyphens'
         )
+
+    def test_at_symbol_in_username(self):
+        """
+        normalize() should allow '@' in usernames (i.e. last '@' is split char)
+        """
+        parts = normalize('user@example.com@www.example.com')
+        eq_(parts[0], 'user@example.com')
+        eq_(parts[1], 'www.example.com')
 
     def test_normalization_of_empty_input(self):
         empties = ('', '', '')
@@ -356,5 +362,64 @@ class TestNetwork(FabricTest):
 [%(prefix)s] run: silent
 [%(prefix)s] run: normal
 [%(prefix)s] out: foo
+""" % {'prefix': env.host_string}
+        eq_(expected[1:], sys.stdall.getvalue())
+
+
+    @mock_streams('both')
+    @server(
+        pubkeys=True,
+        responses={'oneliner': 'result', 'twoliner': 'result1\nresult2'}
+    )
+    def test_io_should_print_prefix_if_ouput_prefix_is_true(self):
+        """
+        run/sudo should print [host_string] if env.output_prefix == True
+        """
+        env.password = None
+        env.no_agent = env.no_keys = True
+        env.key_filename = CLIENT_PRIVKEY
+        with password_response(
+            (CLIENT_PRIVKEY_PASSPHRASE, PASSWORDS[USER]),
+            silent=False
+        ):
+            run('oneliner')
+            run('twoliner')
+        expected = """
+[%(prefix)s] run: oneliner
+[%(prefix)s] Login password: 
+[%(prefix)s] out: result
+[%(prefix)s] run: twoliner
+[%(prefix)s] out: result1
+[%(prefix)s] out: result2
+""" % {'prefix': env.host_string}
+        eq_(expected[1:], sys.stdall.getvalue())
+
+
+    @mock_streams('both')
+    @server(
+        pubkeys=True,
+        responses={'oneliner': 'result', 'twoliner': 'result1\nresult2'}
+    )
+    def test_io_should_not_print_prefix_if_ouput_prefix_is_false(self):
+        """
+        run/sudo shouldn't print [host_string] if env.output_prefix == False
+        """
+        env.password = None
+        env.no_agent = env.no_keys = True
+        env.key_filename = CLIENT_PRIVKEY
+        with password_response(
+            (CLIENT_PRIVKEY_PASSPHRASE, PASSWORDS[USER]),
+            silent=False
+        ):
+            with settings(output_prefix=False):
+                run('oneliner')
+                run('twoliner')
+        expected = """
+[%(prefix)s] run: oneliner
+[%(prefix)s] Login password: 
+result
+[%(prefix)s] run: twoliner
+result1
+result2
 """ % {'prefix': env.host_string}
         eq_(expected[1:], sys.stdall.getvalue())

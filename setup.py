@@ -13,6 +13,10 @@ long_description = """
 To find out what's new in this version of Fabric, please see `the changelog
 <http://docs.fabfile.org/changes/%s.html>`_.
 
+You can also install the `in-development version
+<https://github.com/bitprophet/fabric/tarball/master#egg=fabric-dev>`_ using
+pip, with `pip install fabric==dev`.
+
 ----
 
 %s
@@ -21,11 +25,6 @@ To find out what's new in this version of Fabric, please see `the changelog
 
 For more information, please see the Fabric website or execute ``fab --help``.
 """ % (get_version('short'), readme)
-
-# PyCrypto>2.0 + Python 2.5 + pip == bad times.
-# We can't easily detect pip usage at this point, but we can at least limit our
-# "downgrade" of the PyCrypto requirement to 2.5-only.
-PYCRYPTO = "<2.1" if (sys.version_info[:2] == (2, 5)) else ">=1.9"
 
 setup(
     name='Fabric',
