@@ -37,7 +37,7 @@ setup(
     packages=find_packages(),
     test_suite='nose.collector',
     tests_require=['nose', 'fudge'],
-    install_requires=['pycrypto %s' % PYCRYPTO, 'paramiko==1.7.6.1'],
+    install_requires=['pycrypto >= 1.9', 'paramiko==1.7.6.1'],
     dependency_links = [
         'https://github.com/goosemo/paramiko/tarball/master#egg=paramiko-1.7.6.1'
         ],
