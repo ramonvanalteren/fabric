@@ -8,7 +8,7 @@ test suite.
 from fabric.state import env
 from fabric.network import disconnect_all
 from pprint import pprint
-
+from Crypto import Random 
 
 class Job_Queue(object):
     """
@@ -112,6 +112,7 @@ class Job_Queue(object):
             job = self._queued.pop()
             env.host_string = env.host = job.name
             job.start()
+            Random.atfork()
             self._running.append(job)
 
         if not self._closed:
