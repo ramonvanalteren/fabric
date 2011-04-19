@@ -4,7 +4,7 @@ Convenience decorators for use in fabfiles.
 
 from functools import wraps
 from types import StringTypes
-
+from Crypto import Random
 
 def hosts(*host_list):
     """
@@ -131,14 +131,20 @@ def runs_parallel(with_bubble_of=None):
     since the default mode of operation is to be sequential.
     """
     def real_decorator(func):
+
+        @wraps(func)
+        def inner(*args, **kwargs):
+            Random.atfork()
+            return func(*args, **kwargs)
+
         _parallel.add(func.__name__)
 
         if is_sequential(func):
             _sequential.remove(func.__name__)
 
-        func._pool_size = with_bubble_of
+        inner._pool_size = with_bubble_of
 
-        return func
+        return inner
 
     # Trick to allow for both a dec w/ the optional setting without have to
     # force it to use ()
