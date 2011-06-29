@@ -104,6 +104,23 @@ as `~fabric.context_managers.cd`.
 Note that many of these may be set via ``fab``'s command-line switches -- see
 :doc:`fab` for details. Cross-links will be provided where appropriate.
 
+.. _abort-on-prompts:
+
+``abort_on_prompts``
+--------------------
+
+**Default:** ``False``
+
+When ``True``, Fabric will run in a non-interactive mode, calling
+`~fabric.utils.abort` anytime it would normally prompt the user for input (such
+as password prompts, "What host to connect to?" prompts, fabfile invocation of
+`~fabric.operations.prompt`, and so forth.) This allows users to ensure a Fabric
+session will always terminate cleanly instead of blocking on user input forever
+when unforeseen circumstances arise.
+
+.. versionadded:: 1.1
+.. seealso:: :option:`--abort-on-prompts`
+
 ``all_hosts``
 -------------
 
@@ -185,6 +202,19 @@ host key is actually valid (e.g. cloud servers such as EC2.)
 
 .. seealso:: :doc:`ssh`
 
+.. _exclude-hosts:
+
+``exclude_hosts``
+-----------------
+
+**Default:** ``[]``
+
+Specifies a list of host strings to be :ref:`skipped over <exclude-hosts>`
+during ``fab`` execution. Typically set via :option:`--exclude-hosts/-x <-x>`.
+
+.. versionadded:: 1.1
+
+
 ``fabfile``
 -----------
 
@@ -228,6 +258,20 @@ purposes only.
 The global host list used when composing per-task host lists.
 
 .. seealso:: :doc:`execution`
+
+.. _keepalive:
+
+``keepalive``
+-------------
+
+**Default:** ``0`` (i.e. no keepalive)
+
+An integer specifying an SSH keepalive interval to use; basically maps to the
+SSH config option ``ClientAliveInterval``. Useful if you find connections are
+timing out due to meddlesome network hardware or what have you.
+
+.. seealso:: :option:`--keepalive`
+.. versionadded:: 1.1
 
 .. _key-filename:
 

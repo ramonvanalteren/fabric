@@ -1,19 +1,25 @@
 from __future__ import with_statement
 
-from StringIO import StringIO # No need for cStringIO at this time
+from StringIO import StringIO  # No need for cStringIO at this time
 from contextlib import contextmanager
+from copy import deepcopy
+from fudge.patcher import with_patched_object
 from functools import wraps, partial
 from types import StringTypes
 import copy
 import getpass
+import os
 import re
+import shutil
 import sys
+import tempfile
 
 from fudge import Fake, patched_context, clear_expectations
 
 from fabric.context_managers import settings
 from fabric.network import interpret_host_string
 from fabric.state import env, output
+from fabric.sftp import SFTP
 import fabric.network
 
 from server import PORT, PASSWORDS, USER, HOST
@@ -21,7 +27,7 @@ from server import PORT, PASSWORDS, USER, HOST
 
 class FabricTest(object):
     """
-    Nose-oriented test runner class that wipes env after every test.
+    Nose-oriented test runner which wipes state.env and provides file helpers.
     """
     def setup(self):
         # Clear Fudge mock expectations
@@ -38,10 +44,28 @@ class FabricTest(object):
         # Command response mocking is easier without having to account for
         # shell wrapping everywhere.
         env.use_shell = False
+        # Temporary local file dir
+        self.tmpdir = tempfile.mkdtemp()
 
     def teardown(self):
         env.update(self.previous_env)
         output.update(self.previous_output)
+        shutil.rmtree(self.tmpdir)
+
+    def path(self, *path_parts):
+        return os.path.join(self.tmpdir, *path_parts)
+
+    def mkfile(self, path, contents):
+        dest = self.path(path)
+        with open(dest, 'w') as fd:
+            fd.write(contents)
+        return dest
+
+    def exists_remotely(self, path):
+        return SFTP(env.host_string).exists(path)
+
+    def exists_locally(self, path):
+        return os.path.exists(path)
 
 
 class CarbonCopy(StringIO):
@@ -94,6 +118,7 @@ def mock_streams(which):
     both = (which == 'both')
     stdout = (which == 'stdout') or both
     stderr = (which == 'stderr') or both
+
     def mocked_streams_decorator(func):
         @wraps(func)
         def inner_wrapper(*args, **kwargs):
@@ -183,28 +208,51 @@ def line_prefix(prefix, string):
     return "\n".join(prefix + x for x in string.splitlines())
 
 
-def eq_(a, b, msg=None):
+def eq_(result, expected, msg=None):
     """
     Shadow of the Nose builtin which presents easier to read multiline output.
     """
-    default_msg = """
-Expected:
-%s
-
-Got:
-%s
+    params = {'expected': expected, 'result': result}
+    aka = """
 
 --------------------------------- aka -----------------------------------------
 
 Expected:
-%r
+%(expected)r
 
 Got:
-%r
-""" % (a, b, a, b)
-    assert a == b, msg or default_msg
+%(result)r
+""" % params
+    default_msg = """
+Expected:
+%(expected)s
+
+Got:
+%(result)s
+""" % params
+    if (repr(result) != str(result)) or (repr(expected) != str(expected)):
+        default_msg += aka
+    assert result == expected, msg or default_msg
 
 
 def eq_contents(path, text):
     with open(path) as fd:
         eq_(text, fd.read())
+
+
+def patched_env(updates):
+    """
+    Execute a function with a patched copy of ``fabric.state.env``.
+
+    ``fabric.state.env`` is patched during the wrapped functions' run, with an
+    equivalent copy that has been ``update``d with the given ``updates``.
+
+    E.g. with ``fabric.state.env = {'foo': 'bar', 'biz': 'baz'}``, a function
+    decorated with ``@patched_env({'foo': 'notbar'})`` would see
+    ``fabric.state.env`` as equal to ``{'biz': 'baz', 'foo': 'notbar'}``.
+    """
+    from fabric.state import env
+    def wrapper(func):
+        new_env = deepcopy(env).update(updates)
+        return with_patched_object('fabric.state', 'env', new_env)
+    return wrapper

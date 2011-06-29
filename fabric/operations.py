@@ -19,11 +19,11 @@ from contextlib import closing
 from fabric.context_managers import settings, char_buffered
 from fabric.io import output_loop, input_loop
 from fabric.network import needs_host
+from fabric.sftp import SFTP
 from fabric.state import (env, connections, output, win32, default_channel,
     io_sleep)
-from fabric.utils import abort, indent, warn, puts
 from fabric.thread_handling import ThreadHandler
-from fabric.sftp import SFTP
+from fabric.utils import abort, indent, warn, puts, handle_prompt_abort
 
 # For terminal size logic below
 if not win32:
@@ -143,6 +143,9 @@ def require(*keys, **kwargs):
     Note: it is assumed that the keyword arguments apply to all given keys as a
     group. If you feel the need to specify more than one ``used_for``, for
     example, you should break your logic into multiple calls to ``require()``.
+
+    .. versionchanged:: 1.1
+        Allow iterable ``provided_by`` values instead of just single values.
     """
     # If all keys exist, we're good, so keep going.
     missing_keys = filter(lambda x: x not in env, keys)
@@ -217,6 +220,13 @@ def prompt(text, key=None, default='', validate=None):
     Either way, `prompt` will re-prompt until validation passes (or the user
     hits ``Ctrl-C``).
 
+    .. note::
+        `~fabric.operations.prompt` honors :ref:`env.abort_on_prompts
+        <abort-on-prompts>` and will call `~fabric.utils.abort` instead of
+        prompting if that flag is set to ``True``. If you want to block on user
+        input regardless, try wrapping with
+        `~fabric.context_managers.settings`.
+
     Examples::
 
         # Simplest form:
@@ -232,7 +242,12 @@ def prompt(text, key=None, default='', validate=None):
         release = prompt('Please supply a release name',
                 validate=r'^\w+-\d+(\.\d+)?$')
 
+        # Prompt regardless of the global abort-on-prompts setting:
+        with settings(abort_on_prompts=False):
+            prompt('I seriously need an answer on this! ')
+
     """
+    handle_prompt_abort()
     # Store previous env value for later display, if necessary
     if key:
         previous_value = env.get(key)
@@ -696,7 +711,7 @@ def _prefix_env_vars(command):
     return path + command
 
 
-def _execute(channel, command, pty=True, combine_stderr=True,
+def _execute(channel, command, pty=True, combine_stderr=None,
     invoke_shell=False):
     """
     Execute ``command`` over ``channel``.
@@ -704,6 +719,9 @@ def _execute(channel, command, pty=True, combine_stderr=True,
     ``pty`` controls whether a pseudo-terminal is created.
 
     ``combine_stderr`` controls whether we call ``channel.set_combine_stderr``.
+    By default, the global setting for this behavior (:ref:`env.combine_stderr
+    <combine-stderr>`) is consulted, but you may specify ``True`` or ``False``
+    here to override it.
 
     ``invoke_shell`` controls whether we use ``exec_command`` or
     ``invoke_shell`` (plus a handful of other things, such as always forcing a
@@ -715,8 +733,9 @@ def _execute(channel, command, pty=True, combine_stderr=True,
     """
     with char_buffered(sys.stdin):
         # Combine stdout and stderr to get around oddball mixing issues
-        if combine_stderr or env.combine_stderr:
-            channel.set_combine_stderr(True)
+        if combine_stderr is None:
+            combine_stderr = env.combine_stderr
+        channel.set_combine_stderr(combine_stderr)
 
         # Assume pty use, and allow overriding of this either via kwarg or env
         # var.  (invoke_shell always wants a pty no matter what.)
@@ -868,7 +887,7 @@ def _run_command(command, shell=True, pty=True, combine_stderr=True,
 
 
 @needs_host
-def run(command, shell=True, pty=True, combine_stderr=True):
+def run(command, shell=True, pty=True, combine_stderr=None):
     """
     Run a shell command on a remote host.
 
@@ -916,12 +935,17 @@ def run(command, shell=True, pty=True, combine_stderr=True):
 
     .. versionchanged:: 1.0
         The default value of ``pty`` is now ``True``.
+
+    .. versionchanged:: 1.0.2
+        The default value of ``combine_stderr`` is now ``None`` instead of
+        ``True``. However, the default *behavior* is unchanged, as the global
+        setting is still ``True``.
     """
     return _run_command(command, shell, pty, combine_stderr)
 
 
 @needs_host
-def sudo(command, shell=True, pty=True, combine_stderr=True, user=None):
+def sudo(command, shell=True, pty=True, combine_stderr=None, user=None):
     """
     Run a shell command on a remote host, with superuser privileges.
 

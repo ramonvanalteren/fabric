@@ -10,7 +10,7 @@ def abort(msg):
     """
     Abort execution, print ``msg`` to stderr and exit with error status (1.)
 
-    This function currently makes use of `sys.exit`_, which raises 
+    This function currently makes use of `sys.exit`_, which raises
     `SystemExit`_. Therefore, it's possible to detect and recover from inner
     calls to `abort` by using ``except SystemExit`` or similar.
 
@@ -121,3 +121,9 @@ def fastprint(text, show_prefix=False, end="", flush=True):
     .. seealso:: `~fabric.utils.puts`
     """
     return puts(text=text, show_prefix=show_prefix, end=end, flush=flush)
+
+
+def handle_prompt_abort():
+    import fabric.state
+    if fabric.state.env.abort_on_prompts:
+        abort("Needed to prompt, but abort-on-prompts was set to True!")

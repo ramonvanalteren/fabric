@@ -19,7 +19,7 @@ def _flush(pipe, text):
 
 
 def _endswith(char_list, substring):
-    tail = char_list[-1*len(substring):]
+    tail = char_list[-1 * len(substring):]
     substring = list(substring)
     return tail == substring
 
@@ -79,7 +79,7 @@ def output_loop(chan, which, capture):
                 # backwards compatible with Fabric 0.9.x behavior; the user
                 # will still see the prompt on their screen (no way to avoid
                 # this) but at least it won't clutter up the captured text.
-                del capture[-1*len(env.sudo_prompt):]
+                del capture[-1 * len(env.sudo_prompt):]
                 # If the password we just tried was bad, prompt the user again.
                 if (not password) or reprompt:
                     # Print the prompt and/or the "try again" notice if
@@ -94,9 +94,11 @@ def output_loop(chan, which, capture):
                     # Prompt for, and store, password. Give empty prompt so the
                     # initial display "hides" just after the actually-displayed
                     # prompt from the remote end.
+                    chan.input_enabled = False
                     password = fabric.network.prompt_for_password(
                         prompt=" ", no_colon=True, stream=pipe
                     )
+                    chan.input_enabled = True
                     # Update env.password, env.passwords if necessary
                     set_password(password)
                     # Reset reprompt flag
@@ -117,7 +119,7 @@ def input_loop(chan, using_pty):
         else:
             r, w, x = select([sys.stdin], [], [], 0.0)
             have_char = (r and r[0] == sys.stdin)
-        if have_char:
+        if have_char and chan.input_enabled:
             # Send all local stdin to remote end's stdin
             byte = msvcrt.getch() if win32 else sys.stdin.read(1)
             chan.sendall(byte)
