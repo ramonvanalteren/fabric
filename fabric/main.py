@@ -588,7 +588,7 @@ def update_output_levels(show, hide):
             state.output[key] = False
 
 
-def running_parallel(command):
+def running_parallel(task):
     """
     Returns if the command currently asking to be run is needing to be run in
     parallel or not.
@@ -599,8 +599,8 @@ def running_parallel(command):
         if it is explicitly parallel
     """
     return (('multiprocessing' in sys.modules) and 
-            ((state.env.run_in_parallel and not is_sequential(command)) or
-                (is_parallel(command))))
+            ((state.env.run_in_parallel and not is_sequential(task)) or
+                (is_parallel(task))))
 
 
 def _run_task(task, args, kwargs):
@@ -785,13 +785,19 @@ def main():
 
                     # Actually run command
                     # run in parallel when set globally or on function with decorator
-                    p = multiprocessing.Process(
-                            target = _run_task,
-                            args = task + args,
-                            kwargs = kwargs,
-                            )
+                    if hasattr(task, 'run') and callable(task.run):
+                        p = multiprocessing.Process(
+                                target = task.run,
+                                args = args,
+                                kwargs = kwargs,
+                                )
+                    else: 
+                        p = multiprocessing.Process(
+                                target = task,
+                                args = args,
+                                kwargs = kwargs,
+                                )
                     p.name = state.env.host_string
-
                     jobs.append(p)
 
                 else:

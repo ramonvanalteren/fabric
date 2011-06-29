@@ -125,15 +125,15 @@ def runs_sequential(func):
     non-sequentally.
 
     """
-    _sequential.add(func.__name__)
+    _sequential.add(func.func_name)
 
     if is_parallel(func):
-        _parallel.remove(func.__name__)
+        _parallel.remove(func.func_name)
 
     return func
 
 def is_sequential(func):
-    return func.__name__ in _sequential
+    return func.func_name in _sequential
 
 
 _parallel = set()
@@ -149,10 +149,10 @@ def runs_parallel(with_bubble_of=None):
             Random.atfork()
             return func(*args, **kwargs)
 
-        _parallel.add(func.__name__)
+        _parallel.add(func.func_name)
 
         if is_sequential(func):
-            _sequential.remove(func.__name__)
+            _sequential.remove(func.func_name)
 
         inner._pool_size = with_bubble_of
 
@@ -166,7 +166,7 @@ def runs_parallel(with_bubble_of=None):
     return real_decorator
 
 def is_parallel(func):
-    return func.__name__ in _parallel
+    return func.func_name in _parallel
 
 def needs_multiprocessing():
     return _parallel != set()
