@@ -797,7 +797,8 @@ def main():
                                 args = args,
                                 kwargs = kwargs,
                                 )
-                    p.name = state.env.host_string
+                    # Cast to a str since Unicode strings will fail multiprocessing's isinstance check (https://github.com/goosemo/fabric/issues/11)
+                    p.name = str(state.env.host_string)
                     jobs.append(p)
 
                 else:
