@@ -55,6 +55,7 @@ def execute(task, hosts, roles, *args, **kwargs):
             else:
                 res = task(*args, **kwargs)
             result["localhost"] = res
+        return result
     finally:
         disconnect_all()
     # Restore env
