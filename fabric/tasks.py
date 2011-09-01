@@ -1,6 +1,6 @@
 from functools import wraps
 from fabric import state
-from fabric.network import interpret_host_string
+from fabric.network import interpret_host_string, disconnect_all
 from fabric.utils import abort, indent
 from fabric.job_queue import Job_Queue
 
@@ -37,20 +37,23 @@ def execute(task, hosts, roles, *args, **kwargs):
 
     # Get host list
     state.env.all_hosts = hosts = get_hosts(task, hosts, roles)
-    for host in hosts:
-        username, hostname, port = interpret_host_string(host)
-        if state.output == "running":
-            print("[%s] Executing task '%s'" % (host, state.env.command))
-        if _is_task(task):
-            task.run(*args, **kwargs)
-        else:
-            task(*args, **kwargs)
-    if not hosts:
-        # No hosts defined, so run command locally
-        if _is_task(task):
-            task.run(*args, **kwargs)
-        else:
-            task(*args, **kwargs)
+    try:
+        for host in hosts:
+            username, hostname, port = interpret_host_string(host)
+            if state.output == "running":
+                print("[%s] Executing task '%s'" % (host, state.env.command))
+            if _is_task(task):
+                task.run(*args, **kwargs)
+            else:
+                task(*args, **kwargs)
+        if not hosts:
+            # No hosts defined, so run command locally
+            if _is_task(task):
+                task.run(*args, **kwargs)
+            else:
+                task(*args, **kwargs)
+    finally:
+        disconnect_all()
     # Restore env
     state.env.update(prev_values)
 
@@ -86,31 +89,34 @@ def parallel_execute(task, hosts, roles, *args, **kwargs):
     # Create the jobqueue
     jobs = Job_Queue(max_running=pool_size)
 
-    for host in hosts:
-        username, hostname, port = interpret_host_string(host)
-        if state.output == "running":
-            print("[%s] Executing task '%s'" % (host, state.env.command))
-        if _is_task(task):
-            p = multiprocessing.Process(
-                target = task.run,
-                args = args,
-                kwargs = kwargs,
+    try:
+        for host in hosts:
+            username, hostname, port = interpret_host_string(host)
+            if state.output == "running":
+                print("[%s] Executing task '%s'" % (host, state.env.command))
+            if _is_task(task):
+                p = multiprocessing.Process(
+                    target = task.run,
+                    args = args,
+                    kwargs = kwargs,
+                    )
+            else:
+                p = multiprocessing.Process(
+                    target=task,
+                    args=args,
+                    kwargs=kwargs
                 )
-        else:
-            p = multiprocessing.Process(
-                target=task,
-                args=args,
-                kwargs=kwargs
-            )
-        jobs.append(p)
-    jobs.close()
-    jobs.start()
-    # Catch the local only case
-    if not hosts:
-        if _is_task(task):
-            task.run(*args, **kwargs)
-        else:
-            task(*args, **kwargs)
+            jobs.append(p)
+        jobs.close()
+        jobs.start()
+        # Catch the local only case
+        if not hosts:
+            if _is_task(task):
+                task.run(*args, **kwargs)
+            else:
+                task(*args, **kwargs)
+    finally:
+        disconnect_all()
 
     # Restore env
     state.env.update(prev_values)
