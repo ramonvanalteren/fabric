@@ -173,8 +173,8 @@ class Task(object):
     """
     name = 'undefined'
     use_task_objects = True
-    hosts = None
-    roles = None
+    hosts = []
+    roles = []
     force_sequential = False
 
     # TODO: make it so that this wraps other decorators as expected
