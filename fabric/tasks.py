@@ -26,7 +26,7 @@ def execute(task, hosts, roles, *args, **kwargs):
     If no hosts/roles are specified, the command is inspected for @hosts & @roles decorators and executed against these.
     """
     # Store previous state
-    orev_attrs = [ "command", "all_hosts", "host_string", "host", "user", "port" ]
+    prev_attrs = [ "command", "all_hosts", "host_string", "host", "user", "port" ]
     prev_values = dict([(a, state.env[a]) for a in prev_attrs])
 
     # Set current command name, used for error messages
@@ -62,7 +62,7 @@ def parallel_execute(task, hosts, roles, *args, **kwargs):
     """
     # Store previous state
     import multiprocessing
-    orev_attrs = [ "command", "all_hosts", "host_string", "host", "user", "port" ]
+    prev_attrs = [ "command", "all_hosts", "host_string", "host", "user", "port" ]
     prev_values = dict([(a, state.env[a]) for a in prev_attrs])
 
     # Set current command name, used for error messages
