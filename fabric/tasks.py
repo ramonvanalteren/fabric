@@ -199,7 +199,7 @@ class WrappedCallableTask(Task):
     """
     def __init__(self, callable):
         super(WrappedCallableTask, self).__init__()
-        self.wrapped = callable
+        self._wrapped = callable
         self.__name__ = self.name = callable.__name__
         self.__doc__ = callable.__doc__
 
@@ -213,7 +213,7 @@ class WrappedCallableTask(Task):
         return self.run(*args, **kwargs)
 
     def run(self, *args, **kwargs):
-        return self.wrapped(*args, **kwargs)
+        return self._wrapped(*args, **kwargs)
 
     def __getattr__(self, k):
-        return getattr(self.wrapped, k)
+        return getattr(self._wrapped, k)
