@@ -3,7 +3,6 @@ from fabric import state
 from fabric.network import interpret_host_string
 from fabric.utils import abort, indent
 from fabric.job_queue import Job_Queue
-from fabric.decorators import is_sequential, is_parallel
 
 def _get_runnable_method(task):
     """
@@ -204,10 +203,6 @@ class WrappedCallableTask(Task):
             self.roles = callable.roles
         if hasattr(callable, "hosts"):
             self.hosts = callable.hosts
-        if is_sequential(callable):
-            self.force_sequential = True
-        else:
-            self.force_sequential = False
 
     def __call__(self, *args, **kwargs):
         return self.run(*args, **kwargs)
