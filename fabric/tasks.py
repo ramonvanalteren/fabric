@@ -203,6 +203,12 @@ class WrappedCallableTask(Task):
         self.__name__ = self.name = callable.__name__
         self.__doc__ = callable.__doc__
 
+        # Wrap the @role/@hosts decorators as well ?
+        if hasattr(callable, "roles"):
+            self.roles = callable.roles
+        if hasattr(callable, "hosts"):
+            self.hosts = callable.hosts
+
     def __call__(self, *args, **kwargs):
         return self.run(*args, **kwargs)
 
