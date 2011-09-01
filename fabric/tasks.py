@@ -68,7 +68,8 @@ def parallel_execute(task, hosts, roles, *args, **kwargs):
     If no hosts/roles are specified, the command is inspected for @hosts & @roles decorators and executed against these.
     """
     # Store previous state
-    import multiprocessing
+    from job_queue2 import Job_Queue
+
     prev_attrs = [ "command", "all_hosts", "host_string", "host", "user", "port" ]
     prev_values = dict([(a, state.env[a]) for a in prev_attrs])
 
@@ -99,22 +100,12 @@ def parallel_execute(task, hosts, roles, *args, **kwargs):
             if state.output == "running":
                 print("[%s] Executing task '%s'" % (host, state.env.command))
             if _is_task(task):
-                p = multiprocessing.Process(
-                    target = task.run,
-                    args = args,
-                    kwargs = kwargs,
-                    )
+                p = (host, task.run, args, kwargs)
             else:
-                p = multiprocessing.Process(
-                    target=task,
-                    args=args,
-                    kwargs=kwargs
-                )
-            p.name = str(state.env.host_string)
+                p = (host, task, args, kwargs)
             jobs.append(p)
         jobs.close()
-        jobs.start()
-        result = dict([(j.name, j) for j in jobs._completed])
+        result = jobs.start()
         # Catch the local only case
         if not hosts:
             if _is_task(task):
@@ -208,7 +199,7 @@ class WrappedCallableTask(Task):
     """
     def __init__(self, callable):
         super(WrappedCallableTask, self).__init__()
-        self.wrapped = callable
+        self._wrapped = callable
         self.__name__ = self.name = callable.__name__
         self.__doc__ = callable.__doc__
 
@@ -222,7 +213,9 @@ class WrappedCallableTask(Task):
         return self.run(*args, **kwargs)
 
     def run(self, *args, **kwargs):
-        return self.wrapped(*args, **kwargs)
+        return self._wrapped(*args, **kwargs)
 
     def __getattr__(self, k):
-        return getattr(self.wrapped, k)
+        if k == "_wrapped":
+            raise AttributeError
+        return getattr(self._wrapped, k)
