@@ -106,6 +106,7 @@ def parallel_execute(task, hosts, roles, *args, **kwargs):
                     args=args,
                     kwargs=kwargs
                 )
+            p.name = str(state.env.host_string)
             jobs.append(p)
         jobs.close()
         jobs.start()
