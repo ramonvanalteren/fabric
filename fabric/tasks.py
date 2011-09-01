@@ -216,4 +216,6 @@ class WrappedCallableTask(Task):
         return self._wrapped(*args, **kwargs)
 
     def __getattr__(self, k):
+        if k == "_wrapped":
+            raise AttributeError
         return getattr(self._wrapped, k)
