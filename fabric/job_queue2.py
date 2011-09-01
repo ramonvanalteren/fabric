@@ -2,6 +2,7 @@ __author__ = 'ramon'
 
 import multiprocessing
 import logging
+from fabric.network import disconnect_all
 
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
@@ -63,6 +64,8 @@ class Job_Queue(object):
             c.start()
         # Wait for the queue to empty
         self._queued.join()
+
+        disconnect_all()
 
         # Return the result
         res = {}

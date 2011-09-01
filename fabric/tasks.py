@@ -199,7 +199,7 @@ class WrappedCallableTask(Task):
     """
     def __init__(self, callable):
         super(WrappedCallableTask, self).__init__()
-        self._wrapped = callable
+        self.wrapped = callable
         self.__name__ = self.name = callable.__name__
         self.__doc__ = callable.__doc__
 
@@ -213,9 +213,13 @@ class WrappedCallableTask(Task):
         return self.run(*args, **kwargs)
 
     def run(self, *args, **kwargs):
-        return self._wrapped(*args, **kwargs)
+        return self.wrapped(*args, **kwargs)
 
     def __getattr__(self, k):
-        if k == "_wrapped":
+        # This needs to be here due to the way copy works when depickling from the queue
+        # Since it doesn't call __init__ it will getattr through all attributes and populate them
+        # Which will cause an infinite recursion error when trying to access wrapped.
+        # See: http://bit.ly/pom4vh for more info
+        if k == "wrapped":
             raise AttributeError
-        return getattr(self._wrapped, k)
+        return getattr(self.wrapped, k)
