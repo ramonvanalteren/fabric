@@ -38,20 +38,23 @@ def execute(task, hosts, roles, *args, **kwargs):
     # Get host list
     state.env.all_hosts = hosts = get_hosts(task, hosts, roles)
     try:
+        result = {}
         for host in hosts:
             username, hostname, port = interpret_host_string(host)
             if state.output == "running":
                 print("[%s] Executing task '%s'" % (host, state.env.command))
             if _is_task(task):
-                task.run(*args, **kwargs)
+                res = task.run(*args, **kwargs)
             else:
-                task(*args, **kwargs)
+                res = task(*args, **kwargs)
+            result[host] = res
         if not hosts:
             # No hosts defined, so run command locally
             if _is_task(task):
-                task.run(*args, **kwargs)
+                res = task.run(*args, **kwargs)
             else:
-                task(*args, **kwargs)
+                res = task(*args, **kwargs)
+            result["localhost"] = res
     finally:
         disconnect_all()
     # Restore env
@@ -110,12 +113,15 @@ def parallel_execute(task, hosts, roles, *args, **kwargs):
             jobs.append(p)
         jobs.close()
         jobs.start()
+        result = dict([(j.name, j) for j in jobs._completed])
         # Catch the local only case
         if not hosts:
             if _is_task(task):
-                task.run(*args, **kwargs)
+                res = task.run(*args, **kwargs)
             else:
-                task(*args, **kwargs)
+                res = task(*args, **kwargs)
+            result["localhost"] = res
+        return result
     finally:
         disconnect_all()
 
