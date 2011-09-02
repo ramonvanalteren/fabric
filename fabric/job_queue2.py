@@ -27,7 +27,9 @@ class Consumer(multiprocessing.Process):
             log.info("Starting on task: %s" % name)
             self.name = name
             result = task(*args, **kwargs)
-            log.debug("result: %s" % dir(result))
+            # Decorate the result with the taskname
+            result.taskname = name
+#            log.debug("result: %s" % dir(result))
             self.task_queue.task_done()
             self.result_queue.put({name: result})
 
