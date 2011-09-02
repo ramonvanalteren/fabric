@@ -181,8 +181,17 @@ class Task(object):
     hosts = []
     roles = []
     force_sequential = False
+    aliases = None
+    is_default = False
 
     # TODO: make it so that this wraps other decorators as expected
+    def __init__(self, alias=None, aliases=None, default=False,
+        *args, **kwargs):
+        if alias is not None:
+            self.aliases = [alias, ]
+        if aliases is not None:
+            self.aliases = aliases
+        self.is_default = default
 
     def run(self):
         raise NotImplementedError
@@ -192,14 +201,13 @@ class WrappedCallableTask(Task):
     """
     Wraps a given callable transparently, while marking it as a valid Task.
 
-    Generally used via the `~fabric.decorators.task` decorator and not
-    directly.
+    Generally used via `@task <~fabric.decorators.task>` and not directly.
 
     .. versionadded:: 1.1
     """
-    def __init__(self, callable):
-        super(WrappedCallableTask, self).__init__()
-        self._wrapped = callable
+    def __init__(self, callable, *args, **kwargs):
+        super(WrappedCallableTask, self).__init__(*args, **kwargs)
+        self.wrapped = callable
         self.__name__ = self.name = callable.__name__
         self.__doc__ = callable.__doc__
 
@@ -213,13 +221,13 @@ class WrappedCallableTask(Task):
         return self.run(*args, **kwargs)
 
     def run(self, *args, **kwargs):
-        return self._wrapped(*args, **kwargs)
+        return self.wrapped(*args, **kwargs)
 
     def __getattr__(self, k):
         # This needs to be here due to the way copy works when depickling from the queue
         # Since it doesn't call __init__ it will getattr through all attributes and populate them
         # Which will cause an infinite recursion error when trying to access _wrapped.
         # See: http://bit.ly/pom4vh for more info
-        if k == "_wrapped":
+        if k == "wrapped":
             raise AttributeError
         return getattr(self._wrapped, k)
