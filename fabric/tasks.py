@@ -226,8 +226,8 @@ class WrappedCallableTask(Task):
     def __getattr__(self, k):
         # This needs to be here due to the way copy works when depickling from the queue
         # Since it doesn't call __init__ it will getattr through all attributes and populate them
-        # Which will cause an infinite recursion error when trying to access _wrapped.
+        # Which will cause an infinite recursion error when trying to access wrapped.
         # See: http://bit.ly/pom4vh for more info
         if k == "wrapped":
             raise AttributeError
-        return getattr(self._wrapped, k)
+        return getattr(self.wrapped, k)
